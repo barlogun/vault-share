@@ -82,3 +82,81 @@
     expiry: uint,
   }
 )
+
+;; Governance Proposal Database
+(define-map proposals
+  { proposal-id: uint }
+  {
+    title: (string-ascii 256),
+    asset-id: uint,
+    start-height: uint,
+    end-height: uint,
+    executed: bool,
+    votes-for: uint,
+    votes-against: uint,
+    minimum-votes: uint,
+  }
+)
+
+;; Democratic Voting Records
+(define-map votes
+  {
+    proposal-id: uint,
+    voter: principal,
+  }
+  { vote-amount: uint }
+)
+
+;; Dividend Distribution Tracker
+(define-map dividend-claims
+  {
+    asset-id: uint,
+    claimer: principal,
+  }
+  { last-claimed-amount: uint }
+)
+
+;; External Price Oracle Integration
+(define-map price-feeds
+  { asset-id: uint }
+  {
+    price: uint,
+    decimals: uint,
+    last-updated: uint,
+    oracle: principal,
+  }
+)
+
+;; INPUT VALIDATION FRAMEWORK
+
+(define-private (validate-asset-value (value uint))
+  (and
+    (>= value MIN-ASSET-VALUE)
+    (<= value MAX-ASSET-VALUE)
+  )
+)
+
+(define-private (validate-duration (duration uint))
+  (and
+    (>= duration MIN-DURATION)
+    (<= duration MAX-DURATION)
+  )
+)
+
+(define-private (validate-kyc-level (level uint))
+  (<= level MAX-KYC-LEVEL)
+)
+
+(define-private (validate-expiry (expiry uint))
+  (and
+    (> expiry stacks-block-height)
+    (<= (- expiry stacks-block-height) MAX-EXPIRY)
+  )
+)
+
+(define-private (validate-minimum-votes (vote-count uint))
+  (and
+    (> vote-count u0)
+    (<= vote-count tokens-per-asset)
+  )
+)
