@@ -310,3 +310,52 @@
 (define-read-only (get-asset-info (asset-id uint))
   (map-get? assets { asset-id: asset-id })
 )
+
+;; Token Balance Query
+(define-read-only (get-balance
+    (owner principal)
+    (asset-id uint)
+  )
+  (default-to u0
+    (get balance
+      (map-get? token-balances {
+        owner: owner,
+        asset-id: asset-id,
+      })
+    ))
+)
+
+;; Governance Proposal Details
+(define-read-only (get-proposal (proposal-id uint))
+  (map-get? proposals { proposal-id: proposal-id })
+)
+
+;; Individual Vote Information
+(define-read-only (get-vote
+    (proposal-id uint)
+    (voter principal)
+  )
+  (map-get? votes {
+    proposal-id: proposal-id,
+    voter: voter,
+  })
+)
+
+;; Oracle Price Feed Access
+(define-read-only (get-price-feed (asset-id uint))
+  (map-get? price-feeds { asset-id: asset-id })
+)
+
+;; Dividend Claim History
+(define-read-only (get-last-claim
+    (asset-id uint)
+    (claimer principal)
+  )
+  (default-to u0
+    (get last-claimed-amount
+      (map-get? dividend-claims {
+        asset-id: asset-id,
+        claimer: claimer,
+      })
+    ))
+)
