@@ -160,3 +160,81 @@
     (<= vote-count tokens-per-asset)
   )
 )
+
+(define-private (validate-metadata-uri (uri (string-ascii 256)))
+  (and
+    (> (len uri) u0)
+    (<= (len uri) u256)
+  )
+)
+
+;; UTILITY FUNCTIONS
+
+;; Sequential Asset ID Generation
+(define-private (get-next-asset-id)
+  (default-to u1 (get-last-asset-id))
+)
+
+;; Sequential Proposal ID Generation
+(define-private (get-next-proposal-id)
+  (default-to u1 (get-last-proposal-id))
+)
+
+;; Asset Registry Counter (Implementation Placeholder)
+(define-private (get-last-asset-id)
+  none
+)
+
+;; Proposal Registry Counter (Implementation Placeholder)
+(define-private (get-last-proposal-id)
+  none
+)
+
+;; CORE PROTOCOL FUNCTIONS
+
+;; Asset Tokenization Engine
+(define-public (register-asset
+    (metadata-uri (string-ascii 256))
+    (asset-value uint)
+  )
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (asserts! (validate-metadata-uri metadata-uri) err-invalid-uri)
+    (asserts! (validate-asset-value asset-value) err-invalid-value)
+    (let ((asset-id (get-next-asset-id)))
+      (map-set assets { asset-id: asset-id } {
+        owner: contract-owner,
+        metadata-uri: metadata-uri,
+        asset-value: asset-value,
+        is-locked: false,
+        creation-height: stacks-block-height,
+        last-price-update: stacks-block-height,
+        total-dividends: u0,
+      })
+      (map-set token-balances {
+        owner: contract-owner,
+        asset-id: asset-id,
+      } { balance: tokens-per-asset }
+      )
+      (ok asset-id)
+    )
+  )
+)
+
+;; Automated Dividend Distribution System
+(define-public (claim-dividends (asset-id uint))
+  (let (
+      (asset (unwrap! (get-asset-info asset-id) err-not-found))
+      (balance (get-balance tx-sender asset-id))
+      (last-claim (get-last-claim asset-id tx-sender))
+      (total-dividends (get total-dividends asset))
+      (claimable-amount (/ (* balance (- total-dividends last-claim)) tokens-per-asset))
+    )
+    (asserts! (> claimable-amount u0) err-invalid-amount)
+    (ok (map-set dividend-claims {
+      asset-id: asset-id,
+      claimer: tx-sender,
+    } { last-claimed-amount: total-dividends }
+    ))
+  )
+)
